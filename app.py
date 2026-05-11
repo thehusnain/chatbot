@@ -1,6 +1,7 @@
 import streamlit as st
 from groq import Groq
 import time
+import datetime
 
 st.set_page_config(
     page_title="Neural Interface",
@@ -21,6 +22,24 @@ st.markdown("""
         --border-glow: rgba(0, 245, 255, 0.4);
     }
 
+    /* ========== ANIMATIONS ========== */
+    @keyframes flicker {
+        0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
+        20%, 24%, 55% { opacity: 0.4; }
+    }
+    @keyframes inputPulse {
+        0%, 100% { box-shadow: 0 0 8px rgba(0,245,255,0.3), 0 0 25px rgba(0,245,255,0.1); }
+        50%       { box-shadow: 0 0 15px rgba(0,245,255,0.6), 0 0 40px rgba(0,245,255,0.2); }
+    }
+    @keyframes statusBlink {
+        0%, 100% { opacity: 1; }
+        50%       { opacity: 0.3; }
+    }
+    @keyframes fadeSlideUp {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
     /* ========== GLOBAL ========== */
     .stApp {
         background-color: var(--dark-bg);
@@ -34,56 +53,14 @@ st.markdown("""
         font-family: 'Share Tech Mono', monospace;
     }
 
-    /* ========== ANIMATIONS ========== */
-    @keyframes glitch {
-        0%   { clip-path: inset(0 0 95% 0); transform: skewX(-5deg); }
-        10%  { clip-path: inset(80% 0 0 0);  transform: skewX(3deg);  }
-        20%  { clip-path: inset(40% 0 50% 0); transform: skewX(-2deg); }
-        100% { clip-path: inset(0 0 100% 0); transform: skewX(0); }
-    }
-    @keyframes flicker {
-        0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
-        20%, 24%, 55% { opacity: 0.4; }
-    }
-    @keyframes scanline {
-        0%   { top: -10%; }
-        100% { top: 110%; }
-    }
-    @keyframes inputPulse {
-        0%, 100% { box-shadow: 0 0 8px rgba(0,245,255,0.3), 0 0 25px rgba(0,245,255,0.1), inset 0 0 10px rgba(0,245,255,0.03); }
-        50%       { box-shadow: 0 0 15px rgba(0,245,255,0.6), 0 0 40px rgba(0,245,255,0.2), inset 0 0 15px rgba(0,245,255,0.05); }
-    }
-    @keyframes borderPulse {
-        0%, 100% { border-color: var(--neon-cyan); box-shadow: 0 0 8px var(--neon-cyan); }
-        50%       { border-color: var(--neon-pink);  box-shadow: 0 0 18px var(--neon-pink); }
-    }
-    @keyframes statusBlink {
-        0%, 100% { opacity: 1; }
-        50%       { opacity: 0.3; }
-    }
-    @keyframes fadeSlideUp {
-        from { opacity: 0; transform: translateY(14px); }
-        to   { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes scanBar {
-        0%   { transform: translateY(-100%); opacity: 0.6; }
-        100% { transform: translateY(1000%); opacity: 0; }
-    }
-    @keyframes shimmer {
-        0%   { background-position: -200% center; }
-        100% { background-position: 200% center; }
-    }
-
     /* ========== HEADER ========== */
     .hero-container {
         text-align: center;
-        padding: 10px 0 30px;
-        position: relative;
-        overflow: hidden;
+        padding: 10px 0 20px;
     }
     .main-header {
         font-family: 'Orbitron', sans-serif;
-        font-size: 3.6rem;
+        font-size: 3rem;
         font-weight: 900;
         letter-spacing: 8px;
         text-transform: uppercase;
@@ -97,7 +74,7 @@ st.markdown("""
     .sub-header {
         font-family: 'Share Tech Mono', monospace;
         color: var(--neon-cyan);
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         letter-spacing: 3px;
         margin-top: 6px;
         text-shadow: 0 0 10px var(--neon-cyan);
@@ -105,7 +82,7 @@ st.markdown("""
     .divider-line {
         height: 1px;
         background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
-        margin: 15px auto;
+        margin: 12px auto;
         width: 60%;
     }
 
@@ -115,11 +92,6 @@ st.markdown("""
         border-right: 1px solid rgba(0,245,255,0.2);
         box-shadow: 4px 0 30px rgba(0, 245, 255, 0.06);
     }
-    [data-testid="stSidebar"] > div:first-child {
-        padding-top: 1.5rem;
-    }
-
-    /* Sidebar Title */
     .sidebar-logo {
         font-family: 'Orbitron', sans-serif;
         font-size: 1.1rem;
@@ -128,137 +100,138 @@ st.markdown("""
         text-align: center;
         letter-spacing: 4px;
         text-shadow: 0 0 14px var(--neon-cyan);
-        padding: 10px 0;
+        padding: 10px 0 4px;
     }
     .sidebar-tagline {
         font-family: 'Share Tech Mono', monospace;
-        font-size: 0.65rem;
-        color: rgba(0,245,255,0.5);
+        font-size: 0.62rem;
+        color: rgba(0,245,255,0.4);
         text-align: center;
         letter-spacing: 2px;
-        margin-bottom: 16px;
+        margin-bottom: 14px;
+    }
+    .sidebar-divider {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(0,245,255,0.25), transparent);
+        margin: 12px 0;
     }
 
     /* Status Card */
     .status-card {
         background: rgba(0, 20, 35, 0.8);
-        border: 1px solid rgba(0, 245, 255, 0.25);
+        border: 1px solid rgba(0, 245, 255, 0.2);
         border-radius: 6px;
-        padding: 14px 16px;
-        margin-bottom: 12px;
-        animation: fadeSlideUp 0.6s ease-out;
+        padding: 12px 14px;
+        margin-bottom: 10px;
     }
     .status-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 6px;
+        margin-bottom: 5px;
     }
-    .status-label {
-        font-family: 'Share Tech Mono', monospace;
-        font-size: 0.7rem;
-        color: rgba(0,245,255,0.5);
-        letter-spacing: 1px;
-        text-transform: uppercase;
-    }
-    .status-value {
-        font-family: 'Share Tech Mono', monospace;
-        font-size: 0.75rem;
-        color: var(--neon-green);
-        font-weight: bold;
-    }
+    .status-label { font-size: 0.68rem; color: rgba(0,245,255,0.45); letter-spacing: 1px; text-transform: uppercase; }
+    .status-value { font-size: 0.72rem; color: var(--neon-green); font-weight: bold; }
     .status-dot {
-        display: inline-block;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: var(--neon-green);
-        box-shadow: 0 0 8px var(--neon-green);
-        margin-right: 6px;
-        animation: statusBlink 1.5s infinite;
+        display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+        background: var(--neon-green); box-shadow: 0 0 8px var(--neon-green);
+        margin-right: 5px; animation: statusBlink 1.5s infinite;
     }
     .model-badge {
-        font-family: 'Share Tech Mono', monospace;
-        background: rgba(0,245,255,0.1);
-        border: 1px solid rgba(0,245,255,0.3);
-        border-radius: 4px;
-        padding: 6px 10px;
-        font-size: 0.72rem;
-        color: var(--neon-cyan);
-        text-align: center;
-        margin-top: 6px;
-        letter-spacing: 1px;
+        background: rgba(0,245,255,0.08); border: 1px solid rgba(0,245,255,0.25);
+        border-radius: 4px; padding: 5px 10px; font-size: 0.7rem;
+        color: var(--neon-cyan); text-align: center; margin-top: 5px; letter-spacing: 1px;
     }
 
-    /* Sidebar divider */
-    .sidebar-divider {
-        height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(0,245,255,0.3), transparent);
-        margin: 14px 0;
-    }
-
-    /* Session stats */
-    .session-stats {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 12px;
-    }
+    /* Session Stats */
+    .session-stats { display: flex; gap: 8px; margin-bottom: 12px; }
     .stat-box {
-        flex: 1;
-        background: rgba(0,30,45,0.6);
-        border: 1px solid rgba(0,245,255,0.2);
-        border-radius: 5px;
-        padding: 10px 8px;
-        text-align: center;
+        flex: 1; background: rgba(0,30,45,0.6);
+        border: 1px solid rgba(0,245,255,0.15); border-radius: 5px;
+        padding: 8px; text-align: center;
     }
-    .stat-num {
-        font-family: 'Orbitron', sans-serif;
-        font-size: 1.3rem;
-        color: var(--neon-cyan);
-        line-height: 1;
-    }
-    .stat-label {
-        font-size: 0.6rem;
-        color: rgba(0,245,255,0.45);
-        letter-spacing: 1px;
+    .stat-num { font-family: 'Orbitron', sans-serif; font-size: 1.2rem; color: var(--neon-cyan); line-height: 1; }
+    .stat-label { font-size: 0.58rem; color: rgba(0,245,255,0.4); letter-spacing: 1px; text-transform: uppercase; margin-top: 3px; }
+
+    /* Chat History Items */
+    .history-section-title {
+        font-size: 0.62rem;
+        color: rgba(0,245,255,0.4);
+        letter-spacing: 2px;
         text-transform: uppercase;
-        margin-top: 4px;
+        margin-bottom: 8px;
+        padding-left: 2px;
+    }
+    .history-item {
+        background: rgba(0, 20, 35, 0.6);
+        border: 1px solid rgba(0, 245, 255, 0.1);
+        border-radius: 5px;
+        padding: 8px 12px;
+        margin-bottom: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.72rem;
+        color: rgba(200, 234, 240, 0.7);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .history-item:hover {
+        border-color: rgba(0, 245, 255, 0.4);
+        background: rgba(0, 30, 50, 0.8);
+        color: var(--neon-cyan);
+    }
+    .history-item.active {
+        border-color: var(--neon-cyan);
+        background: rgba(0, 50, 70, 0.6);
+        color: var(--neon-cyan);
+        box-shadow: 0 0 8px rgba(0,245,255,0.15);
+    }
+    .history-time {
+        font-size: 0.58rem;
+        color: rgba(0,245,255,0.25);
+        margin-top: 2px;
     }
 
     /* ========== BUTTONS ========== */
     .stButton > button {
         background: transparent !important;
-        color: var(--neon-pink) !important;
-        border: 1px solid var(--neon-pink) !important;
+        color: var(--neon-cyan) !important;
+        border: 1px solid rgba(0,245,255,0.5) !important;
         border-radius: 4px !important;
         font-family: 'Share Tech Mono', monospace !important;
         letter-spacing: 2px;
-        font-size: 0.75rem !important;
+        font-size: 0.72rem !important;
         text-transform: uppercase;
         transition: all 0.25s ease;
         width: 100%;
     }
     .stButton > button:hover {
-        background: rgba(255, 0, 200, 0.15) !important;
-        box-shadow: 0 0 14px rgba(255, 0, 200, 0.4);
+        background: rgba(0, 245, 255, 0.12) !important;
+        box-shadow: 0 0 14px rgba(0, 245, 255, 0.3);
         transform: translateY(-1px);
+    }
+    /* Delete/Purge button - pink accent */
+    .purge-btn > button {
+        color: var(--neon-pink) !important;
+        border-color: rgba(255,0,200,0.4) !important;
+    }
+    .purge-btn > button:hover {
+        background: rgba(255, 0, 200, 0.12) !important;
+        box-shadow: 0 0 14px rgba(255, 0, 200, 0.3) !important;
     }
 
     /* ========== CHAT MESSAGES ========== */
     [data-testid="stChatMessage"] {
         background: var(--card-bg) !important;
-        border: 1px solid rgba(0, 245, 255, 0.2);
+        border: 1px solid rgba(0, 245, 255, 0.18);
         border-left: 3px solid var(--neon-cyan);
         border-radius: 6px !important;
         padding: 12px 16px !important;
         margin-bottom: 10px !important;
         backdrop-filter: blur(6px);
         animation: fadeSlideUp 0.4s ease-out;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.4), inset 0 0 20px rgba(0,245,255,0.02);
-    }
-    [data-testid="stChatMessage"][data-testid*="user"] {
-        border-left: 3px solid var(--neon-pink) !important;
-        background: rgba(30, 0, 30, 0.8) !important;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.4);
     }
 
     /* ========== CHAT INPUT ========== */
@@ -273,20 +246,17 @@ st.markdown("""
     [data-testid="stChatInput"] textarea {
         background: transparent !important;
         border: none !important;
-        border-radius: 0 !important;
         color: var(--neon-cyan) !important;
         font-family: 'Share Tech Mono', monospace !important;
         font-size: 0.9rem !important;
         letter-spacing: 1px;
         caret-color: var(--neon-cyan);
-        caret-shape: block;
     }
     [data-testid="stChatInput"] textarea::placeholder {
         color: rgba(0, 245, 255, 0.3) !important;
         letter-spacing: 2px;
         font-style: italic;
     }
-    /* Send Button */
     [data-testid="stChatInputSubmitButton"] button {
         background: linear-gradient(135deg, rgba(0,245,255,0.15), rgba(0,245,255,0.05)) !important;
         border: 1px solid rgba(0,245,255,0.5) !important;
@@ -300,18 +270,17 @@ st.markdown("""
         box-shadow: 0 0 20px var(--neon-cyan), 0 0 40px rgba(0,245,255,0.3);
         transform: scale(1.08);
     }
-    /* Bottom decorative bar above input */
     .input-label {
         font-family: 'Share Tech Mono', monospace;
-        font-size: 0.65rem;
-        color: rgba(0, 245, 255, 0.4);
+        font-size: 0.62rem;
+        color: rgba(0, 245, 255, 0.35);
         letter-spacing: 3px;
         text-align: center;
         margin-bottom: 6px;
         text-transform: uppercase;
     }
 
-    /* ========== INFO ALERTS ========== */
+    /* ========== ALERTS ========== */
     .stAlert {
         background: rgba(0, 245, 255, 0.07) !important;
         border: 1px solid rgba(0,245,255,0.25) !important;
@@ -320,34 +289,71 @@ st.markdown("""
         font-family: 'Share Tech Mono', monospace !important;
         font-size: 0.75rem !important;
     }
-    
+
     /* ========== SCROLLBAR ========== */
-    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: #04050d; }
-    ::-webkit-scrollbar-thumb { background: rgba(0,245,255,0.3); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb { background: rgba(0,245,255,0.25); border-radius: 10px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--neon-cyan); }
 </style>
 """, unsafe_allow_html=True)
 
-# ─── HEADER ──────────────────────────────────────────────────────────────────
-st.markdown("""
-<div class="hero-container">
-    <p class="main-header">Neural Interface</p>
-    <div class="divider-line"></div>
-    <p class="sub-header">[ SECURE CHANNEL ACTIVE ] &nbsp;|&nbsp; GROQ LPU ENGINE &nbsp;|&nbsp; LLAMA-3.1 CORE</p>
-</div>
-""", unsafe_allow_html=True)
+# ─── SESSION STATE INIT ───────────────────────────────────────────────────────
+def new_session():
+    """Create a new chat session dict."""
+    session_id = str(int(time.time()))
+    return {
+        "id": session_id,
+        "title": "New Chat",
+        "created_at": datetime.datetime.now().strftime("%H:%M"),
+        "messages": [{"role": "assistant", "content": "Connection established. Neural core online. How can I assist you, operator?"}]
+    }
 
-# ─── SIDEBAR ─────────────────────────────────────────────────────────────────
+if "sessions" not in st.session_state:
+    first = new_session()
+    st.session_state.sessions = [first]
+    st.session_state.active_session_id = first["id"]
+
+if "active_session_id" not in st.session_state:
+    st.session_state.active_session_id = st.session_state.sessions[0]["id"]
+
+def get_active_session():
+    for s in st.session_state.sessions:
+        if s["id"] == st.session_state.active_session_id:
+            return s
+    return st.session_state.sessions[0]
+
+def switch_session(session_id):
+    st.session_state.active_session_id = session_id
+
+def delete_session(session_id):
+    st.session_state.sessions = [s for s in st.session_state.sessions if s["id"] != session_id]
+    if not st.session_state.sessions:
+        first = new_session()
+        st.session_state.sessions = [first]
+        st.session_state.active_session_id = first["id"]
+    elif st.session_state.active_session_id == session_id:
+        st.session_state.active_session_id = st.session_state.sessions[0]["id"]
+
+# ─── CONFIG ───────────────────────────────────────────────────────────────────
 api_key = st.secrets.get("GROQ_API_KEY")
 selected_model = "llama-3.1-8b-instant"
+active = get_active_session()
+msg_count = len([m for m in active["messages"] if m["role"] == "user"])
 
-# Count messages for session stats (exclude greeting)
-msg_count = len([m for m in st.session_state.get("messages", []) if m["role"] == "user"])
-
+# ─── SIDEBAR ─────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown('<div class="sidebar-logo">N.I. SYSTEM</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sidebar-tagline">NEURAL INTERFACE v1.0.0</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-tagline">NEURAL INTERFACE v2.0.0</div>', unsafe_allow_html=True)
+
+    # New Chat button
+    if st.button("+ NEW CHAT", use_container_width=True):
+        sess = new_session()
+        st.session_state.sessions.insert(0, sess)
+        st.session_state.active_session_id = sess["id"]
+        st.rerun()
+
+    st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
 
     # Connection status
     st.markdown(f"""
@@ -357,20 +363,9 @@ with st.sidebar:
             <span class="status-value"><span class="status-dot"></span>ONLINE</span>
         </div>
         <div class="status-row">
-            <span class="status-label">Uplink</span>
-            <span class="status-value" style="color:#00f5ff;">GROQ API</span>
+            <span class="status-label">Core</span>
+            <span class="status-value" style="color:#00f5ff;">GROQ LPU</span>
         </div>
-        <div class="status-row">
-            <span class="status-label">Latency</span>
-            <span class="status-value">&lt; 500ms</span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Active model
-    st.markdown(f"""
-    <div class="status-card">
-        <div class="status-label" style="margin-bottom:8px; color:rgba(0,245,255,0.7);">Active Core</div>
         <div class="model-badge">{selected_model}</div>
     </div>
     """, unsafe_allow_html=True)
@@ -383,62 +378,81 @@ with st.sidebar:
             <div class="stat-label">Queries</div>
         </div>
         <div class="stat-box">
-            <div class="stat-num">{len(st.session_state.get("messages", []))}</div>
-            <div class="stat-label">Messages</div>
+            <div class="stat-num">{len(st.session_state.sessions)}</div>
+            <div class="stat-label">Sessions</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
     st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
 
-    # Purge button
-    if st.button("PURGE MEMORY", use_container_width=True):
-        st.session_state.messages = [
-            {"role": "assistant", "content": "Memory purged. Awaiting new command input..."}
-        ]
-        st.rerun()
+    # ── Chat History ──
+    st.markdown('<div class="history-section-title">Recent Chats</div>', unsafe_allow_html=True)
+
+    for sess in st.session_state.sessions:
+        is_active = sess["id"] == st.session_state.active_session_id
+        active_class = "active" if is_active else ""
+        col1, col2 = st.columns([5, 1])
+        with col1:
+            st.markdown(f"""
+            <div class="history-item {active_class}" title="{sess['title']}">
+                {sess['title'][:30]}{'...' if len(sess['title']) > 30 else ''}
+                <div class="history-time">{sess['created_at']}</div>
+            </div>
+            """, unsafe_allow_html=True)
+            if st.button("", key=f"switch_{sess['id']}"):
+                switch_session(sess["id"])
+                st.rerun()
+        with col2:
+            if st.button("✕", key=f"del_{sess['id']}"):
+                delete_session(sess["id"])
+                st.rerun()
 
     st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
-
-    # Footer
     st.markdown("""
-    <div style="text-align:center; font-family:'Share Tech Mono',monospace; font-size:0.62rem; color:rgba(0,245,255,0.25); line-height:1.8;">
-        BUILT WITH STREAMLIT<br>
-        POWERED BY GROQ<br>
-        &copy; 2026 N.I. SYSTEMS
+    <div style="text-align:center; font-family:'Share Tech Mono',monospace; font-size:0.58rem; color:rgba(0,245,255,0.2); line-height:1.8;">
+        BUILT WITH STREAMLIT &amp; GROQ<br>&copy; 2026 N.I. SYSTEMS
     </div>
     """, unsafe_allow_html=True)
 
-# ─── CHAT INTERFACE ───────────────────────────────────────────────────────────
-if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {"role": "assistant", "content": "Connection established. Neural core online. How can I assist you, operator?"}
-    ]
+# ─── HEADER ──────────────────────────────────────────────────────────────────
+st.markdown(f"""
+<div class="hero-container">
+    <p class="main-header">Neural Interface</p>
+    <div class="divider-line"></div>
+    <p class="sub-header">[ {active['title'].upper()} ] &nbsp;|&nbsp; GROQ LPU ENGINE &nbsp;|&nbsp; LLAMA-3.1 CORE</p>
+</div>
+""", unsafe_allow_html=True)
 
-# Display chat history
-for message in st.session_state.messages:
+# ─── CHAT INTERFACE ───────────────────────────────────────────────────────────
+active = get_active_session()
+
+for message in active["messages"]:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Decorative label above input
 st.markdown('<div class="input-label">// input terminal — type your query below</div>', unsafe_allow_html=True)
 
-# Chat input
 if prompt := st.chat_input("Enter command..."):
     if not api_key:
         st.error("ERR_401 // API KEY NOT FOUND IN SECRETS.TOML")
         st.stop()
 
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    active["messages"].append({"role": "user", "content": prompt})
+
+    # Auto-title session from first user message
+    if active["title"] == "New Chat":
+        active["title"] = prompt[:40]
+
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        message_placeholder = st.empty()
+        placeholder = st.empty()
         full_response = ""
         try:
             client = Groq(api_key=api_key)
-            api_messages = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
+            api_messages = [{"role": m["role"], "content": m["content"]} for m in active["messages"]]
             completion = client.chat.completions.create(
                 model=selected_model,
                 messages=api_messages,
@@ -447,9 +461,9 @@ if prompt := st.chat_input("Enter command..."):
             for chunk in completion:
                 if chunk.choices[0].delta.content is not None:
                     full_response += chunk.choices[0].delta.content
-                    message_placeholder.markdown(full_response + "█")
-            message_placeholder.markdown(full_response)
-            st.session_state.messages.append({"role": "assistant", "content": full_response})
-            st.rerun()  # refresh stats in sidebar
+                    placeholder.markdown(full_response + "█")
+            placeholder.markdown(full_response)
+            active["messages"].append({"role": "assistant", "content": full_response})
+            st.rerun()
         except Exception as e:
             st.error(f"SYS_ERR // {e}")
