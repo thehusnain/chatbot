@@ -88,12 +88,12 @@ active = get_active_session()
 user_msg_count = len([m for m in active["messages"] if m["role"] == "user"])
 
 with st.sidebar:
-    # Title
+    # Brand logo
     st.markdown('<div class="sidebar-logo">N.I. SYSTEM</div>', unsafe_allow_html=True)
     st.markdown('<div class="sidebar-tagline">NEURAL INTERFACE v2.0.0</div>', unsafe_allow_html=True)
 
     # New Chat button
-    if st.button("+ NEW CHAT", use_container_width=True):
+    if st.button("+ NEW CHAT", use_container_width=True, key="new_chat_btn"):
         new = create_new_session()
         st.session_state.sessions.insert(0, new)
         st.session_state.active_id = new["id"]
@@ -116,7 +116,7 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-    # Live stats: queries sent & total sessions open
+    # Live stats
     st.markdown(f"""
     <div class="session-stats">
         <div class="stat-box">
@@ -131,31 +131,34 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
     st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
-
-    # Chat History list
     st.markdown('<div class="history-section-title">Recent Chats</div>', unsafe_allow_html=True)
 
+    # ── Chat history list ──
+    # Each session gets a row: [title button | delete button]
+    # Clicking the title switches to that session
     for session in st.session_state.sessions:
         is_active = session["id"] == st.session_state.active_id
-        active_class = "active" if is_active else ""
+        label = session["title"][:26] + ("..." if len(session["title"]) > 26 else "")
+        time_label = session["created_at"]
 
-        col_title, col_delete = st.columns([5, 1])
-        with col_title:
-            # Show session title — truncated if too long
-            st.markdown(f"""
-            <div class="history-item {active_class}">
-                {session['title'][:30]}{'...' if len(session['title']) > 30 else ''}
-                <div class="history-time">{session['created_at']}</div>
-            </div>
-            """, unsafe_allow_html=True)
-            # Invisible button on top of the history item to handle click
-            if st.button(" ", key=f"switch_{session['id']}"):
-                switch_to_session(session["id"])
+        col_btn, col_del = st.columns([5, 1], gap="small")
+
+        with col_btn:
+            # Style active session differently via a CSS class trick:
+            # we inject a class marker into the button label using markdown
+            btn_style = "active-session-btn" if is_active else "session-btn"
+            st.markdown(f'<div class="{btn_style}">', unsafe_allow_html=True)
+            if st.button(f"{label}\n{time_label}", key=f"sess_{session['id']}", use_container_width=True):
+                st.session_state.active_id = session["id"]
                 st.rerun()
-        with col_delete:
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        with col_del:
+            st.markdown('<div class="del-btn">', unsafe_allow_html=True)
             if st.button("✕", key=f"del_{session['id']}"):
                 delete_session(session["id"])
                 st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
     st.markdown("""
